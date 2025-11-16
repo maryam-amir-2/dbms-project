@@ -92,7 +92,7 @@
 
     <!-- Header & Navigation -->
     <header class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-gray-800"> Local Order System</h1>
+        <h1 class="text-4xl font-bold text-gray-800">🍔 Local Order System</h1>
         <p class="text-sm text-gray-500">Data is saved in your browser's memory and will reset upon closing the tab.</p>
     </header>
 
@@ -101,7 +101,7 @@
             <button class="nav-btn btn-primary" onclick="showSection('menu-section')">Menu & Stock</button>
             <button class="nav-btn btn-primary" onclick="showSection('order-section')">New Order</button>
             <button class="nav-btn btn-primary" onclick="showSection('pending-orders-section')">Pending Orders</button>
-            <button class="nav-btn btn-primary" onclick="showSection('history-section')">Order History</button> <!-- NEW BUTTON -->
+            <button class="nav-btn btn-primary" onclick="showSection('history-section')">Order History</button>
             <button class="nav-btn btn-primary" onclick="showSection('reports-section')">Reports</button>
         </nav>
     </div>
@@ -135,7 +135,7 @@
             <div id="pending-orders-list"></div>
         </section>
 
-        <!-- Order History Section (NEW) -->
+        <!-- Order History Section -->
         <section id="history-section" class="section-content hidden lg:col-span-3 card">
             <h2 class="text-2xl font-semibold mb-6 text-gray-700">Order History (Completed & Cancelled)</h2>
             <div id="order-history-list"></div>
@@ -145,12 +145,8 @@
         <section id="reports-section" class="section-content hidden lg:col-span-3 card">
             <h2 class="text-2xl font-semibold mb-4 text-gray-700">Management Reports</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Popular Items View -->
-                <div class="p-4 bg-blue-50 rounded-lg border border-primary-light">
-                    <h3 class="text-xl font-medium text-primary-dark mb-3">🏆 Popular Items Report</h3>
-                    <div id="popular-items-report"></div>
-                </div>
+            <div id="reports-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Popular and Least Popular Reports rendered here -->
             </div>
         </section>
 
@@ -478,16 +474,16 @@
             container.innerHTML = html;
         };
 
-        const renderOrderHistory = () => { // NEW FUNCTION
+        const renderOrderHistory = () => {
             const container = document.getElementById('order-history-list');
             const historyOrders = DB_STATE.orders
-                .filter(o => o.status !== 'Pending') // Only completed or cancelled orders
+                .filter(o => o.status !== 'Pending') 
                 .map(order => ({
                     ...order,
                     customer: DB_STATE.customers.find(c => c.id === order.customerId),
                     total: calculateTotalOrderPrice(order.id)
                 }))
-                .sort((a, b) => b.id - a.id); // Sort descending by ID (most recent first)
+                .sort((a, b) => b.id - a.id);
 
             if (historyOrders.length === 0) {
                 container.innerHTML = '<p class="p-4 bg-gray-50 rounded-lg text-gray-500">No completed or cancelled orders yet.</p>';
@@ -526,9 +522,9 @@
         };
 
         const renderReports = () => {
-            const popularContainer = document.getElementById('popular-items-report');
+            const reportsContainer = document.getElementById('reports-container');
             
-            // Calculate Popular Items
+            // 1. Calculate Item Counts
             const itemCounts = DB_STATE.orderDetails.reduce((acc, detail) => {
                 const existing = acc.find(i => i.itemId === detail.itemId);
                 if (existing) {
@@ -539,28 +535,67 @@
                 return acc;
             }, []);
 
-            const popularItems = itemCounts
-                .map(count => ({
-                    ...count,
-                    name: DB_STATE.menu.find(m => m.id === count.itemId)?.name || 'Unknown Item'
-                }))
-                .sort((a, b) => b.totalOrdered - a.totalOrdered);
+            // 2. Map counts to names for all menu items
+            const allItemsReport = DB_STATE.menu.map(menuItem => {
+                const countData = itemCounts.find(c => c.itemId === menuItem.id);
+                return {
+                    name: menuItem.name,
+                    totalOrdered: countData ? countData.totalOrdered : 0 // Include items with 0 orders
+                };
+            });
 
-            if (popularItems.length === 0) {
-                 popularContainer.innerHTML = '<p class="text-gray-500">No order history available to calculate popularity.</p>';
+            if (allItemsReport.length === 0) {
+                 reportsContainer.innerHTML = '<p class="text-gray-500">No menu items defined to generate reports.</p>';
                  return;
             }
 
-            popularContainer.innerHTML = `
-                <ol class="list-decimal list-inside space-y-2 pl-4">
-                    ${popularItems.map((item, index) => `
-                        <li class="text-gray-700">
-                            <span class="font-semibold text-primary-dark">${item.name}</span>: 
-                            <span class="font-bold text-lg text-accent">${item.totalOrdered}</span> units sold
-                        </li>
-                    `).join('')}
-                </ol>
+            // 3. Most Popular Items (Descending sort)
+            const popularItems = [...allItemsReport].sort((a, b) => b.totalOrdered - a.totalOrdered);
+
+            // 4. Least Popular Items (Ascending sort)
+            const leastPopularItems = [...allItemsReport].sort((a, b) => {
+                // Primary sort: ascending by quantity
+                if (a.totalOrdered !== b.totalOrdered) {
+                    return a.totalOrdered - b.totalOrdered;
+                }
+                // Secondary sort: alphabetical for ties
+                return a.name.localeCompare(b.name);
+            });
+
+
+            // 5. Render both reports
+            
+            // Report HTML for Most Popular
+            const popularHtml = `
+                <div class="p-4 bg-blue-50 rounded-lg border border-primary-light">
+                    <h3 class="text-xl font-medium text-primary-dark mb-3">🏆 Most Popular Items</h3>
+                    <ol class="list-decimal list-inside space-y-2 pl-4">
+                        ${popularItems.map((item, index) => `
+                            <li class="text-gray-700">
+                                <span class="font-semibold text-primary-dark">${item.name}</span>: 
+                                <span class="font-bold text-lg text-accent">${item.totalOrdered}</span> units sold
+                            </li>
+                        `).join('')}
+                    </ol>
+                </div>
             `;
+
+            // Report HTML for Least Popular
+            const leastPopularHtml = `
+                <div class="p-4 bg-red-50 rounded-lg border border-red-300">
+                    <h3 class="text-xl font-medium text-red-700 mb-3">📉 Least Popular/Unsold Items</h3>
+                    <ol class="list-decimal list-inside space-y-2 pl-4">
+                        ${leastPopularItems.map((item, index) => `
+                            <li class="text-gray-700">
+                                <span class="font-semibold text-red-700">${item.name}</span>: 
+                                <span class="font-bold text-lg ${item.totalOrdered === 0 ? 'text-red-500' : 'text-orange-500'}">${item.totalOrdered}</span> units sold
+                            </li>
+                        `).join('')}
+                    </ol>
+                </div>
+            `;
+
+            reportsContainer.innerHTML = popularHtml + leastPopularHtml;
         };
         
 
@@ -575,7 +610,7 @@
             // Re-render data for the visible section
             if (sectionId === 'menu-section') renderMenu();
             if (sectionId === 'pending-orders-section') renderPendingOrders();
-            if (sectionId === 'history-section') renderOrderHistory(); // RENDER HISTORY
+            if (sectionId === 'history-section') renderOrderHistory();
             if (sectionId === 'reports-section') renderReports();
             if (sectionId === 'order-section') renderOrderForm();
         };
@@ -675,7 +710,7 @@
             // Re-render all data-driven sections
             renderPendingOrders();
             renderMenu(); 
-            renderOrderHistory(); // Update history immediately
+            renderOrderHistory(); 
             renderReports();
         };
 
@@ -686,7 +721,7 @@
             renderMenu();
             renderOrderForm(); 
             renderPendingOrders();
-            renderOrderHistory(); // Initial render for history
+            renderOrderHistory();
             renderReports();
             showSection('menu-section');
         };
