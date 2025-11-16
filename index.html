@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Order System</title>
+    <title>Restaurant Order Management (Local)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --primary: #EF4444; /* Red 500 */
-            --secondary: #10B981; /* Emerald 500 */
-            --background: #F3F4F6; /* Gray 100 */
+            --primary-dark: #1E3A8A; /* Dark Blue 800 */
+            --primary-light: #3B82F6; /* Blue 500 */
+            --accent: #10B981; /* Emerald for success */
+            --background: #F3F4F6;
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -20,11 +22,11 @@
         .card {
             background-color: white;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.1), 0 4px 6px -2px rgba(30, 58, 138, 0.05);
             padding: 1.5rem;
         }
         .btn-primary {
-            background-color: var(--primary);
+            background-color: var(--primary-dark);
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -32,10 +34,10 @@
             transition: background-color 0.2s;
         }
         .btn-primary:hover {
-            background-color: #DC2626; /* Red 600 */
+            background-color: #1D4ED8; /* Blue 700 */
         }
         .btn-secondary {
-            background-color: var(--secondary);
+            background-color: var(--accent);
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -46,25 +48,43 @@
             background-color: #059669; /* Emerald 600 */
         }
         .btn-disabled {
-            background-color: #D1D5DB; /* Gray 300 */
+            background-color: #D1D5DB;
             cursor: not-allowed;
+            color: #6B7280;
         }
         table {
-            width: 100%;
             border-collapse: separate;
-            border-spacing: 0;
+            border-spacing: 0 10px;
         }
         th, td {
             padding: 0.75rem 1rem;
             text-align: left;
         }
-        th {
-            background-color: #E5E7EB; /* Gray 200 */
-            font-weight: 600;
-            border-bottom: 2px solid #D1D5DB;
+        .table-row {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s;
         }
-        td {
-            border-bottom: 1px solid #F3F4F6;
+        .table-row:hover {
+            background-color: #F9FAFB;
+        }
+        .table-header th {
+            background-color: #E0E7FF; /* Blue 100 */
+            color: #1E3A8A;
+            font-weight: 700;
+        }
+        /* Custom style for large menu emoji */
+        .menu-icon-display {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem; /* 48px */
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background-color: #F3F4F6;
+            border: 1px solid #E5E7EB;
         }
     </style>
 </head>
@@ -72,14 +92,16 @@
 
     <!-- Header & Navigation -->
     <header class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-gray-800">🍽️ Restaurant Management System</h1>
+        <h1 class="text-4xl font-bold text-gray-800"> Local Order System</h1>
+        <p class="text-sm text-gray-500">Data is saved in your browser's memory and will reset upon closing the tab.</p>
     </header>
 
-    <div class="card p-0 mb-8">
-        <nav class="flex justify-between sm:justify-start gap-4 p-4 border-b border-gray-200">
-            <button class="nav-btn btn-primary" onclick="showSection('menu-section')">Menu</button>
+    <div class="card p-0 mb-8 max-w-7xl mx-auto">
+        <nav class="flex flex-wrap justify-between sm:justify-start gap-4 p-4 border-b border-gray-200">
+            <button class="nav-btn btn-primary" onclick="showSection('menu-section')">Menu & Stock</button>
             <button class="nav-btn btn-primary" onclick="showSection('order-section')">New Order</button>
             <button class="nav-btn btn-primary" onclick="showSection('pending-orders-section')">Pending Orders</button>
+            <button class="nav-btn btn-primary" onclick="showSection('history-section')">Order History</button> <!-- NEW BUTTON -->
             <button class="nav-btn btn-primary" onclick="showSection('reports-section')">Reports</button>
         </nav>
     </div>
@@ -87,38 +109,36 @@
     <!-- Main Content Area -->
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Menu Items Section (Visible by default) -->
+        <!-- Menu Items Section -->
         <section id="menu-section" class="section-content lg:col-span-3 card">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Menu Items & Current Stock</h2>
-            <div id="menu-list">
-                <!-- Menu table will be rendered here -->
-            </div>
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Menu Items & Current Stock</h2>
+            <div id="menu-list"></div>
         </section>
 
         <!-- New Order Section -->
         <section id="order-section" class="section-content hidden lg:col-span-2 card">
             <h2 class="text-2xl font-semibold mb-4 text-gray-700">Place New Order</h2>
-            <div id="order-form-container">
-                <!-- Order creation form will be rendered here -->
-            </div>
+            <div id="order-form-container"></div>
             <div class="mt-8 border-t pt-4">
-                <h3 class="text-xl font-medium mb-3">Current Order Details</h3>
-                <div id="current-order-summary">
-                    <!-- Order summary will be rendered here -->
-                </div>
-                <div class="mt-4 flex gap-4">
-                    <button id="complete-order-btn" class="btn-secondary hidden" onclick="completeCurrentOrder()">Complete Order</button>
-                    <button id="cancel-order-btn" class="btn-primary hidden" onclick="cancelCurrentOrder()">Cancel Order</button>
+                <h3 class="text-xl font-medium mb-3 border-l-4 border-primary-light pl-2">Current Order Summary</h3>
+                <div id="current-order-summary"></div>
+                <div class="mt-6 flex gap-4">
+                    <button id="complete-order-btn" class="btn-secondary hidden" onclick="completeCurrentOrder()">Finalize & Submit Order</button>
+                    <button id="cancel-order-btn" class="btn-primary hidden bg-red-600 hover:bg-red-700" onclick="cancelCurrentOrder()">Discard Order</button>
                 </div>
             </div>
         </section>
         
         <!-- Pending Orders Section -->
         <section id="pending-orders-section" class="section-content hidden lg:col-span-3 card">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Pending Orders (View)</h2>
-            <div id="pending-orders-list">
-                <!-- Pending orders table will be rendered here -->
-            </div>
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Pending Orders (Action Required)</h2>
+            <div id="pending-orders-list"></div>
+        </section>
+
+        <!-- Order History Section (NEW) -->
+        <section id="history-section" class="section-content hidden lg:col-span-3 card">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Order History (Completed & Cancelled)</h2>
+            <div id="order-history-list"></div>
         </section>
         
         <!-- Reports Section -->
@@ -127,20 +147,9 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Popular Items View -->
-                <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <h3 class="text-xl font-medium text-yellow-800 mb-3">🏆 Popular Items View</h3>
-                    <div id="popular-items-report">
-                        <!-- Popular items list will be rendered here -->
-                    </div>
-                </div>
-
-                <!-- Customer Order History View -->
-                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 class="text-xl font-medium text-blue-800 mb-3">🧾 Customer Order History</h3>
-                    <div id="customer-history-report">
-                         <p class="text-sm text-gray-600">This report would typically require selecting a customer, which is omitted for simplicity in this demo.</p>
-                        <!-- History table will be rendered here -->
-                    </div>
+                <div class="p-4 bg-blue-50 rounded-lg border border-primary-light">
+                    <h3 class="text-xl font-medium text-primary-dark mb-3">🏆 Popular Items Report</h3>
+                    <div id="popular-items-report"></div>
                 </div>
             </div>
         </section>
@@ -148,363 +157,148 @@
     </main>
 
     <!-- Custom Message Modal -->
-    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="card max-w-sm w-full">
-            <h3 id="modal-title" class="text-xl font-bold mb-3">Notification</h3>
-            <p id="modal-message" class="mb-4 text-gray-700"></p>
-            <button class="btn-primary w-full" onclick="closeMessage()">Close</button>
+            <h3 id="modal-title" class="text-2xl font-bold mb-3 text-primary-dark">Notification</h3>
+            <p id="modal-message" class="mb-6 text-gray-700"></p>
+            <button class="btn-primary w-full" onclick="closeMessage()">OK</button>
         </div>
     </div>
 
     <script>
-        // --- 1. SIMULATED DATABASE (IN-MEMORY STATE) ---
-        let NEXT_ID = {
-            customer: 3,
-            item: 5,
-            order: 101,
-            detail: 200,
+        // --- 1. LOCAL DATABASE SIMULATION (DB_STATE) ---
+        const DB_STATE = {
+            customers: [],
+            menu: [
+                { id: 1, name: 'Classic Burger', price: 12.50, stock: 50, icon: '🍔' },
+                { id: 2, name: 'Large Fries', price: 4.00, stock: 100, icon: '🍟' },
+                { id: 3, name: 'Artisan Coffee', price: 5.50, stock: 0, icon: '☕' },
+                { id: 4, name: 'Chicken Sandwich', price: 10.99, stock: 25, icon: '🍗' },
+            ],
+            orders: [],
+            orderDetails: [],
+            customerCounter: 1,
+            orderCounter: 1,
         };
 
-        let DB_STATE = {
-            // Customers
-            customers: [
-                { customer_id: 1, customer_name: 'Jane Doe', contact: '555-1234' },
-                { customer_id: 2, customer_name: 'John Smith', contact: '555-5678' },
-            ],
+        let currentOrder = null; // { customerName, customerContact, items: [{ itemId, name, price, quantity }] }
 
-            // Menu_Items (Stock is crucial)
-            menu_items: [
-                { item_id: 1, item_name: 'Classic Cheeseburger', price: 12.50, stock: 50 },
-                { item_id: 2, item_name: 'Large Fries', price: 4.00, stock: 100 },
-                { item_id: 3, item_name: 'Coke', price: 2.50, stock: 0 }, // Out of stock
-                { item_id: 4, item_name: 'Chicken Tenders', price: 8.99, stock: 25 },
-            ],
+        // --- 2. LOCAL BUSINESS LOGIC (CRUD & TRANSACTIONS) ---
 
-            // Orders (status: Pending, Completed, Cancelled)
-            orders: [
-                { order_id: 100, customer_id: 1, order_date: '2025-11-10', status: 'Completed' },
-            ],
-
-            // Order_Details
-            order_details: [
-                { order_detail_id: 199, order_id: 100, item_id: 1, quantity: 2 },
-                { order_detail_id: 198, order_id: 100, item_id: 2, quantity: 3 },
-            ],
+        const calculateTotalOrderPrice = (orderId) => {
+            return DB_STATE.orderDetails
+                .filter(detail => detail.orderId === orderId)
+                .reduce((total, detail) => {
+                    const item = DB_STATE.menu.find(m => m.id === detail.itemId);
+                    return total + (item ? item.price * detail.quantity : 0);
+                }, 0);
         };
 
-        // Current temporary order being built by the user
-        let currentOrder = null; // { order_id, customer_id, customer_name, items: [{ item_id, name, price, quantity }] }
-
-        // --- 2. UTILITY FUNCTIONS (Views, Procedures, Functions) ---
-
-        /** Function: Check Item Stock (Simulated Function) */
-        const checkItemStock = (itemId, requiredQuantity) => {
-            const item = DB_STATE.menu_items.find(i => i.item_id === itemId);
-            return item && item.stock >= requiredQuantity;
-        };
-
-        /** View: Pending Orders View */
-        const getPendingOrdersView = () => {
-            const pendingOrders = DB_STATE.orders.filter(o => o.status === 'Pending');
-            return pendingOrders.map(order => {
-                const customer = DB_STATE.customers.find(c => c.customer_id === order.customer_id);
-                const total = calculateTotalOrderPrice(order.order_id);
-                return {
-                    order_id: order.order_id,
-                    customer_name: customer ? customer.customer_name : 'N/A',
-                    order_date: order.order_date,
-                    status: order.status,
-                    total: total,
-                };
-            });
+        const executeTransaction = (callback) => {
+            try {
+                callback();
+                saveState();
+                return { success: true };
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
         };
         
-        /** Function: Calculate Total Order Price (Simulated Function) */
-        const calculateTotalOrderPrice = (orderId) => {
-            const details = DB_STATE.order_details.filter(d => d.order_id === orderId);
-            return details.reduce((total, detail) => {
-                const item = DB_STATE.menu_items.find(i => i.item_id === detail.item_id);
-                return total + (item ? item.price * detail.quantity : 0);
-            }, 0);
-        };
+        // Simulates the Triggers and Stored Procedures
+        const submitFinalOrder = (customer, items) => {
+            return executeTransaction(() => {
+                // 1. Add Customer (or find existing)
+                const customerId = DB_STATE.customerCounter++;
+                DB_STATE.customers.push({ id: customerId, name: customer.name, contact: customer.contact });
+                
+                // 2. Place New Order
+                const orderId = DB_STATE.orderCounter++;
+                DB_STATE.orders.push({ 
+                    id: orderId, 
+                    customerId: customerId, 
+                    date: new Date().toISOString().split('T')[0], 
+                    status: 'Pending' 
+                });
 
-        /** View: Popular Items View */
-        const getPopularItemsView = () => {
-            const itemQuantities = {};
+                // 3. Add Items & Stock Check/Deduction (Simulating BEFORE/AFTER INSERT Triggers)
+                for (const item of items) {
+                    const menuItem = DB_STATE.menu.find(m => m.id === item.itemId);
+                    
+                    if (!menuItem) throw new Error(`Menu item ID ${item.itemId} not found.`);
+                    
+                    // Trigger A: Check Stock BEFORE insert
+                    if (menuItem.stock < item.quantity) {
+                        throw new Error(`Insufficient stock for ${menuItem.name}. Only ${menuItem.stock} available.`);
+                    }
+                    
+                    // Insert into Order Details
+                    DB_STATE.orderDetails.push({ 
+                        orderId, 
+                        itemId: item.itemId, 
+                        quantity: item.quantity 
+                    });
 
-            DB_STATE.order_details.forEach(detail => {
-                const item = DB_STATE.menu_items.find(i => i.item_id === detail.item_id);
-                if (item) {
-                    itemQuantities[item.item_name] = (itemQuantities[item.item_name] || 0) + detail.quantity;
+                    // Trigger B: Deduct Stock AFTER insert
+                    menuItem.stock -= item.quantity;
                 }
             });
-
-            return Object.entries(itemQuantities)
-                .map(([item_name, total_ordered]) => ({ item_name, total_ordered }))
-                .sort((a, b) => b.total_ordered - a.total_ordered);
         };
 
-        /** Procedure: Add New Customer (Simulated Procedure) */
-        const addNewCustomer = (name, contact) => {
-            const newId = NEXT_ID.customer++;
-            const newCustomer = { customer_id: newId, customer_name: name, contact: contact };
-            DB_STATE.customers.push(newCustomer);
-            return newId;
-        };
-        
-        /** Procedure: Place New Order (Simulated Procedure) */
-        const placeNewOrder = (customerId) => {
-            const newId = NEXT_ID.order++;
-            const newOrder = { order_id: newId, customer_id: customerId, order_date: new Date().toISOString().split('T')[0], status: 'Pending' };
-            DB_STATE.orders.push(newOrder);
-            return newId;
-        };
-
-        /** Procedure: Add Items to an Order (Simulated Procedure with Triggers) */
-        const addItemToOrder = (orderId, itemId, quantity) => {
-            const itemIndex = DB_STATE.menu_items.findIndex(i => i.item_id === itemId);
-            if (itemIndex === -1) {
-                showMessage('Error', 'Item not found.');
-                return false;
-            }
-
-            // --- Trigger: Before Inserting Order_Details ---
-            if (DB_STATE.menu_items[itemIndex].stock < quantity) {
-                showMessage('Stock Error', `Cannot order ${quantity} units. Only ${DB_STATE.menu_items[itemIndex].stock} of the item are in stock.`);
-                return false; // Prevent insertion
-            }
-
-            // Insert item into Order_Details
-            const detailId = NEXT_ID.detail++;
-            DB_STATE.order_details.push({
-                order_detail_id: detailId,
-                order_id: orderId,
-                item_id: itemId,
-                quantity: quantity
-            });
-
-            // --- Trigger: After Inserting Order_Details ---
-            DB_STATE.menu_items[itemIndex].stock -= quantity; // Reduce stock
-            
-            return true;
-        };
-        
-        /** Procedure: Update Order Status (Simulated Procedure with Triggers) */
         const updateOrderStatus = (orderId, newStatus) => {
-            const order = DB_STATE.orders.find(o => o.order_id === orderId);
-            if (!order) return;
-
-            const oldStatus = order.status;
-            order.status = newStatus;
-
-            // --- Trigger: After Updating Order Status to Cancelled ---
-            if (oldStatus !== 'Cancelled' && newStatus === 'Cancelled') {
-                const details = DB_STATE.order_details.filter(d => d.order_id === orderId);
-                details.forEach(detail => {
-                    const item = DB_STATE.menu_items.find(i => i.item_id === detail.item_id);
-                    if (item) {
-                        item.stock += detail.quantity; // Restock the item
-                    }
-                });
-                showMessage('Order Cancelled', `Order #${orderId} was cancelled. Items have been restocked.`);
-            } else if (newStatus === 'Completed') {
-                 showMessage('Order Completed', `Order #${orderId} has been successfully completed.`);
-            }
-
-            // Re-render relevant sections
-            renderPendingOrders();
-            renderMenu();
-        };
-
-        // --- 3. UI/RENDER FUNCTIONS ---
-        
-        /** Renders the Menu Items section */
-        const renderMenu = () => {
-            const container = document.getElementById('menu-list');
-            
-            const html = `
-                <table class="min-w-full">
-                    <thead>
-                        <tr>
-                            <th>Item ID</th>
-                            <th>Item Name</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${DB_STATE.menu_items.map(item => `
-                            <tr class="hover:bg-gray-50">
-                                <td class="font-mono text-sm text-gray-500">${item.item_id}</td>
-                                <td class="font-medium">${item.item_name}</td>
-                                <td>$${item.price.toFixed(2)}</td>
-                                <td class="${item.stock > 10 ? 'text-green-600' : (item.stock > 0 ? 'text-yellow-600' : 'text-red-600')} font-bold">
-                                    ${item.stock} ${item.stock === 0 ? '(Out)' : ''}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            container.innerHTML = html;
-        };
-
-        /** Renders the New Order form based on current state */
-        const renderOrderForm = () => {
-            const container = document.getElementById('order-form-container');
-            const summaryContainer = document.getElementById('current-order-summary');
-            const completeBtn = document.getElementById('complete-order-btn');
-            const cancelBtn = document.getElementById('cancel-order-btn');
-
-            if (!currentOrder) {
-                // Phase 1: Customer Info
-                container.innerHTML = `
-                    <form id="customer-form" class="space-y-4">
-                        <div>
-                            <label for="cName" class="block text-sm font-medium text-gray-700">Customer Name</label>
-                            <input type="text" id="cName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" required>
-                        </div>
-                        <div>
-                            <label for="cContact" class="block text-sm font-medium text-gray-700">Contact</label>
-                            <input type="text" id="cContact" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" required>
-                        </div>
-                        <button type="submit" class="btn-secondary w-full">Start New Order</button>
-                    </form>
-                `;
-                document.getElementById('customer-form').onsubmit = handleStartOrder;
-                summaryContainer.innerHTML = '<p class="text-gray-500">Enter customer details to begin.</p>';
-                completeBtn.classList.add('hidden');
-                cancelBtn.classList.add('hidden');
-            } else {
-                // Phase 2: Add Items
-                container.innerHTML = `
-                    <h3 class="text-xl font-semibold mb-3">Order for: ${currentOrder.customer_name} (#${currentOrder.order_id})</h3>
-                    <div class="space-y-3">
-                        ${DB_STATE.menu_items.map(item => `
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border">
-                                <span class="font-medium">${item.item_name} ($${item.price.toFixed(2)})</span>
-                                <div class="flex items-center space-x-2">
-                                    <span class="${item.stock > 0 ? 'text-green-600' : 'text-red-600'} text-sm">Stock: ${item.stock}</span>
-                                    <button 
-                                        class="btn-secondary px-3 py-1 text-sm ${item.stock === 0 ? 'btn-disabled' : ''}" 
-                                        onclick="handleAddItem(${item.item_id}, '${item.item_name}')"
-                                        ${item.stock === 0 ? 'disabled' : ''}
-                                    >
-                                        Add 1
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+            return executeTransaction(() => {
+                const order = DB_STATE.orders.find(o => o.id === orderId);
+                if (!order) throw new Error("Order not found.");
                 
-                // Render Order Summary
-                const total = currentOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                summaryContainer.innerHTML = currentOrder.items.length === 0 
-                    ? '<p class="text-gray-500">No items added yet.</p>'
-                    : `
-                    <ul class="space-y-1">
-                        ${currentOrder.items.map(item => `
-                            <li class="flex justify-between border-b border-dashed pb-1">
-                                <span>${item.quantity}x ${item.name}</span>
-                                <span class="font-semibold">$${(item.price * item.quantity).toFixed(2)}</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <div class="flex justify-between font-bold text-lg mt-3 pt-3 border-t-2 border-gray-300">
-                        <span>Total:</span>
-                        <span>$${total.toFixed(2)}</span>
-                    </div>
-                `;
-                completeBtn.classList.toggle('hidden', currentOrder.items.length === 0);
-                cancelBtn.classList.remove('hidden');
-            }
-        };
+                const oldStatus = order.status;
+                order.status = newStatus;
 
-        /** Renders the Pending Orders section */
-        const renderPendingOrders = () => {
-            const container = document.getElementById('pending-orders-list');
-            const pendingOrders = getPendingOrdersView();
-
-            if (pendingOrders.length === 0) {
-                container.innerHTML = '<p class="p-4 bg-gray-50 rounded-lg text-gray-500">No pending orders currently.</p>';
-                return;
-            }
-
-            const html = `
-                <table class="min-w-full">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer Name</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${pendingOrders.map(order => `
-                            <tr class="hover:bg-gray-50">
-                                <td class="font-mono text-sm">${order.order_id}</td>
-                                <td class="font-medium">${order.customer_name}</td>
-                                <td>${order.order_date}</td>
-                                <td class="font-bold text-var(--primary)">$${order.total.toFixed(2)}</td>
-                                <td><span class="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">${order.status}</span></td>
-                                <td class="space-x-2 flex">
-                                    <button class="btn-secondary text-sm" onclick="handleUpdateStatus(${order.order_id}, 'Completed')">Complete</button>
-                                    <button class="btn-primary text-sm bg-gray-500 hover:bg-gray-600" onclick="handleUpdateStatus(${order.order_id}, 'Cancelled')">Cancel</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            container.innerHTML = html;
-        };
-
-        /** Renders the Reports section */
-        const renderReports = () => {
-            const popularContainer = document.getElementById('popular-items-report');
-            const popularItems = getPopularItemsView();
-
-            if (popularItems.length === 0) {
-                 popularContainer.innerHTML = '<p class="text-gray-500">No order history available to calculate popularity.</p>';
-                 return;
-            }
-
-            popularContainer.innerHTML = `
-                <ol class="list-decimal list-inside space-y-2">
-                    ${popularItems.map((item, index) => `
-                        <li class="text-gray-700">
-                            <span class="font-semibold">${item.item_name}</span>: 
-                            <span class="font-bold text-blue-600">${item.total_ordered}</span> units ordered
-                        </li>
-                    `).join('')}
-                </ol>
-            `;
-        };
-        
-
-        // --- 4. EVENT HANDLERS AND MAIN LOGIC ---
-
-        // Controls visibility of sections
-        const showSection = (sectionId) => {
-            document.querySelectorAll('.section-content').forEach(section => {
-                section.classList.add('hidden');
+                // Trigger C: Restock on Cancellation
+                if (newStatus === 'Cancelled' && oldStatus !== 'Cancelled') {
+                    const details = DB_STATE.orderDetails.filter(d => d.orderId === orderId);
+                    for (const detail of details) {
+                        const menuItem = DB_STATE.menu.find(m => m.id === detail.itemId);
+                        if (menuItem) {
+                            menuItem.stock += detail.quantity;
+                        }
+                    }
+                }
             });
-            document.getElementById(sectionId).classList.remove('hidden');
-
-            // Re-render when switching to ensure fresh data
-            if (sectionId === 'menu-section') renderMenu();
-            if (sectionId === 'pending-orders-section') renderPendingOrders();
-            if (sectionId === 'reports-section') renderReports();
         };
 
-        // Custom modal functions (replacing alert/confirm)
-        const showMessage = (title, message) => {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').innerHTML = message;
+        // --- 3. STATE PERSISTENCE (Local Storage) ---
+
+        const loadState = () => {
+            try {
+                const storedState = localStorage.getItem('ORDER_SYSTEM_STATE');
+                if (storedState) {
+                    const parsedState = JSON.parse(storedState);
+                    Object.assign(DB_STATE, parsedState);
+                }
+            } catch (e) {
+                console.error("Could not load state:", e);
+            }
+        };
+
+        const saveState = () => {
+            try {
+                localStorage.setItem('ORDER_SYSTEM_STATE', JSON.stringify(DB_STATE));
+            } catch (e) {
+                console.error("Could not save state:", e);
+            }
+        };
+
+        // --- 4. UI UTILITIES ---
+
+        const showMessage = (title, message, isSuccess = true) => {
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+
+            modalTitle.textContent = title;
+            modalMessage.innerHTML = message;
+            
+            modalTitle.classList.toggle('text-primary-dark', isSuccess);
+            modalTitle.classList.toggle('text-red-600', !isSuccess);
+
             document.getElementById('message-modal').classList.remove('hidden');
             document.getElementById('message-modal').classList.add('flex');
         };
@@ -514,110 +308,387 @@
             document.getElementById('message-modal').classList.remove('flex');
         };
 
-        // Order Handler: Step 1 - Start Order (New Customer & New Order Procedures)
+        // --- 5. RENDER FUNCTIONS ---
+        
+        const renderMenu = () => {
+            const container = document.getElementById('menu-list');
+            
+            if (DB_STATE.menu.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No menu items defined.</p>';
+                return;
+            }
+
+            const html = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="rounded-l-lg">Item</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th class="rounded-r-lg">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="space-y-2">
+                        ${DB_STATE.menu.map(item => `
+                            <tr class="table-row">
+                                <td class="rounded-l-lg">
+                                    <!-- Use Emoji Icon here -->
+                                    <span class="menu-icon-display">${item.icon}</span>
+                                </td>
+                                <td class="font-medium">${item.name}</td>
+                                <td>$${item.price.toFixed(2)}</td>
+                                <td class="font-semibold text-lg ${item.stock > 10 ? 'text-green-600' : (item.stock > 0 ? 'text-orange-500' : 'text-red-600')}">
+                                    ${item.stock}
+                                </td>
+                                <td class="rounded-r-lg">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${item.stock > 0 ? 'bg-accent text-white' : 'bg-red-200 text-red-800'}">
+                                        ${item.stock > 0 ? 'Available' : 'Out of Stock'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        };
+
+        const renderOrderForm = () => {
+            const container = document.getElementById('order-form-container');
+            const summaryContainer = document.getElementById('current-order-summary');
+            const completeBtn = document.getElementById('complete-order-btn');
+            const cancelBtn = document.getElementById('cancel-order-btn');
+
+            if (!currentOrder) {
+                // Phase 1: Customer Info / Start Order
+                container.innerHTML = `
+                    <form id="customer-form" class="space-y-4 p-4 border rounded-lg">
+                        <div class="text-lg font-semibold text-primary-dark">Customer Details</div>
+                        <div>
+                            <label for="cName" class="block text-sm font-medium text-gray-700">Customer Name</label>
+                            <input type="text" id="cName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-primary-light focus:ring-primary-light" required>
+                        </div>
+                        <div>
+                            <label for="cContact" class="block text-sm font-medium text-gray-700">Contact / Phone</label>
+                            <input type="text" id="cContact" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:border-primary-light focus:ring-primary-light" required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Start Order</button>
+                    </form>
+                `;
+                document.getElementById('customer-form').onsubmit = handleStartOrder;
+                summaryContainer.innerHTML = '<p class="text-gray-500 p-4 bg-gray-50 rounded-lg">Enter customer details to begin placing an order.</p>';
+                completeBtn.classList.add('hidden');
+                cancelBtn.classList.add('hidden');
+            } else {
+                // Phase 2: Add Items
+                container.innerHTML = `
+                    <h3 class="text-xl font-semibold mb-3 border-l-4 border-accent pl-2">Order for: ${currentOrder.customerName}</h3>
+                    <div class="space-y-3">
+                        ${DB_STATE.menu.map(item => {
+                            const currentStock = DB_STATE.menu.find(i => i.id === item.id)?.stock || 0;
+                            return `
+                                <div class="flex items-center p-3 bg-gray-50 rounded-lg border justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- Use Emoji Icon here -->
+                                        <span class="text-2xl">${item.icon}</span> 
+                                        <span class="font-medium">${item.name} ($${item.price.toFixed(2)})</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="${currentStock > 0 ? 'text-green-600' : 'text-red-600'} text-sm font-semibold">Stock: ${currentStock}</span>
+                                        <button 
+                                            class="btn-secondary px-3 py-1 text-sm ${currentStock === 0 ? 'btn-disabled' : ''}" 
+                                            onclick="handleAddItem(${item.id}, '${item.name}', ${item.price}, ${currentStock})"
+                                            ${currentStock === 0 ? 'disabled' : ''}
+                                        >
+                                            Add 1
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+                // Render Order Summary
+                const total = currentOrder.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                summaryContainer.innerHTML = currentOrder.items.length === 0 
+                    ? '<p class="text-gray-500 p-4 bg-gray-50 rounded-lg">Order is currently empty. Add items from the menu above.</p>'
+                    : `
+                    <ul class="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        ${currentOrder.items.map(item => `
+                            <li class="flex justify-between pb-1 border-b border-blue-100 last:border-b-0">
+                                <span>${item.quantity}x <span class="font-semibold">${item.name}</span></span>
+                                <span class="font-bold text-lg text-primary-dark">$${(item.price * item.quantity).toFixed(2)}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div class="flex justify-between font-extrabold text-xl mt-4 pt-3 border-t-2 border-primary-dark">
+                        <span>Grand Total:</span>
+                        <span class="text-accent">$${total.toFixed(2)}</span>
+                    </div>
+                `;
+                completeBtn.classList.toggle('hidden', currentOrder.items.length === 0);
+                cancelBtn.classList.remove('hidden');
+            }
+        };
+
+        const renderPendingOrders = () => {
+            const container = document.getElementById('pending-orders-list');
+            const pendingOrders = DB_STATE.orders.filter(o => o.status === 'Pending').map(order => ({
+                ...order,
+                customer: DB_STATE.customers.find(c => c.id === order.customerId),
+                total: calculateTotalOrderPrice(order.id)
+            }));
+
+            if (pendingOrders.length === 0) {
+                container.innerHTML = '<p class="p-4 bg-gray-50 rounded-lg text-gray-500">No pending orders currently. Time for a break!</p>';
+                return;
+            }
+
+            const html = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="rounded-l-lg">Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th colspan="2" class="rounded-r-lg text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pendingOrders.map(order => `
+                            <tr class="table-row">
+                                <td class="rounded-l-lg font-mono text-sm">#${order.id}</td>
+                                <td class="font-medium">${order.customer ? order.customer.name : 'N/A'}</td>
+                                <td>${order.date}</td>
+                                <td class="font-bold text-accent">$${order.total.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn-secondary text-sm px-3" onclick="handleUpdateStatus(${order.id}, 'Completed')">Complete</button>
+                                </td>
+                                <td class="rounded-r-lg">
+                                    <button class="btn-primary text-sm bg-red-600 hover:bg-red-700 px-3" onclick="handleUpdateStatus(${order.id}, 'Cancelled')">Cancel</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        };
+
+        const renderOrderHistory = () => { // NEW FUNCTION
+            const container = document.getElementById('order-history-list');
+            const historyOrders = DB_STATE.orders
+                .filter(o => o.status !== 'Pending') // Only completed or cancelled orders
+                .map(order => ({
+                    ...order,
+                    customer: DB_STATE.customers.find(c => c.id === order.customerId),
+                    total: calculateTotalOrderPrice(order.id)
+                }))
+                .sort((a, b) => b.id - a.id); // Sort descending by ID (most recent first)
+
+            if (historyOrders.length === 0) {
+                container.innerHTML = '<p class="p-4 bg-gray-50 rounded-lg text-gray-500">No completed or cancelled orders yet.</p>';
+                return;
+            }
+
+            const html = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="rounded-l-lg">Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th class="rounded-r-lg">Final Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyOrders.map(order => `
+                            <tr class="table-row">
+                                <td class="rounded-l-lg font-mono text-sm">#${order.id}</td>
+                                <td class="font-medium">${order.customer ? order.customer.name : 'N/A'}</td>
+                                <td>${order.date}</td>
+                                <td class="font-bold text-primary-dark">$${order.total.toFixed(2)}</td>
+                                <td class="rounded-r-lg">
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full ${order.status === 'Completed' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-800'}">
+                                        ${order.status}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        };
+
+        const renderReports = () => {
+            const popularContainer = document.getElementById('popular-items-report');
+            
+            // Calculate Popular Items
+            const itemCounts = DB_STATE.orderDetails.reduce((acc, detail) => {
+                const existing = acc.find(i => i.itemId === detail.itemId);
+                if (existing) {
+                    existing.totalOrdered += detail.quantity;
+                } else {
+                    acc.push({ itemId: detail.itemId, totalOrdered: detail.quantity });
+                }
+                return acc;
+            }, []);
+
+            const popularItems = itemCounts
+                .map(count => ({
+                    ...count,
+                    name: DB_STATE.menu.find(m => m.id === count.itemId)?.name || 'Unknown Item'
+                }))
+                .sort((a, b) => b.totalOrdered - a.totalOrdered);
+
+            if (popularItems.length === 0) {
+                 popularContainer.innerHTML = '<p class="text-gray-500">No order history available to calculate popularity.</p>';
+                 return;
+            }
+
+            popularContainer.innerHTML = `
+                <ol class="list-decimal list-inside space-y-2 pl-4">
+                    ${popularItems.map((item, index) => `
+                        <li class="text-gray-700">
+                            <span class="font-semibold text-primary-dark">${item.name}</span>: 
+                            <span class="font-bold text-lg text-accent">${item.totalOrdered}</span> units sold
+                        </li>
+                    `).join('')}
+                </ol>
+            `;
+        };
+        
+
+        // --- 6. EVENT HANDLERS ---
+
+        const showSection = (sectionId) => {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+
+            // Re-render data for the visible section
+            if (sectionId === 'menu-section') renderMenu();
+            if (sectionId === 'pending-orders-section') renderPendingOrders();
+            if (sectionId === 'history-section') renderOrderHistory(); // RENDER HISTORY
+            if (sectionId === 'reports-section') renderReports();
+            if (sectionId === 'order-section') renderOrderForm();
+        };
+
         const handleStartOrder = (event) => {
             event.preventDefault();
             const cName = document.getElementById('cName').value.trim();
             const cContact = document.getElementById('cContact').value.trim();
 
             if (!cName || !cContact) {
-                showMessage('Missing Info', 'Please enter customer name and contact details.');
+                showMessage('Missing Info', 'Please enter customer name and contact details.', false);
                 return;
             }
 
-            const customerId = addNewCustomer(cName, cContact); // Procedure: Add New Customer
-            const orderId = placeNewOrder(customerId);           // Procedure: Place New Order
-
+            // Initialize a temporary order object
             currentOrder = {
-                order_id: orderId,
-                customer_id: customerId,
-                customer_name: cName,
+                customerName: cName,
+                customerContact: cContact,
                 items: [],
             };
 
-            showMessage('Success', `New Order #${orderId} started for ${cName}. You can now add items.`);
+            showMessage('Order Started', `New temporary order started for **${cName}**. Add items below.`);
             renderOrderForm();
         };
 
-        // Order Handler: Step 2 - Add Item (Add Items to an Order Procedure + Triggers)
-        const handleAddItem = (itemId, itemName) => {
-            // Find item price/info
-            const itemInfo = DB_STATE.menu_items.find(i => i.item_id === itemId);
-            if (!itemInfo) return; // Should not happen
+        const handleAddItem = (itemId, itemName, itemPrice, itemStock) => {
+            if (!currentOrder) return;
+            
+            const existingItem = currentOrder.items.find(item => item.itemId === itemId);
+            
+            // Calculate current requested quantity
+            const currentOrderQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
-            // Check if item is already in current order
-            const existingItem = currentOrder.items.find(item => item.item_id === itemId);
-
-            if (checkItemStock(itemId, 1)) { // Check stock before adding
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                } else {
-                    currentOrder.items.push({ 
-                        item_id: itemId, 
-                        name: itemName, 
-                        price: itemInfo.price, 
-                        quantity: 1 
-                    });
-                }
-                
-                // Re-render immediately to update summary
-                renderOrderForm();
-                renderMenu();
-            } else {
-                showMessage('Stock Error', `Sorry, **${itemName}** is now out of stock.`);
+            if (currentOrderQuantity > itemStock) {
+                 showMessage('Stock Error', `Cannot add ${itemName}. Only **${itemStock}** available in stock.`, false);
+                 return;
             }
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                currentOrder.items.push({ 
+                    itemId: itemId, 
+                    name: itemName, 
+                    price: itemPrice, 
+                    quantity: 1 
+                });
+            }
+            
+            renderOrderForm();
         };
         
-        // Order Handler: Final Step - Complete Order
         const completeCurrentOrder = () => {
             if (!currentOrder || currentOrder.items.length === 0) return;
-
-            let successful = true;
             
-            // Iterate and call Procedure: Add Items to an Order (which contains stock check/reduction triggers)
-            currentOrder.items.forEach(item => {
-                if (!addItemToOrder(currentOrder.order_id, item.item_id, item.quantity)) {
-                    successful = false; // Stock check failed for one item (shouldn't happen if UI disables correctly)
-                }
-            });
+            const result = submitFinalOrder(
+                { name: currentOrder.customerName, contact: currentOrder.customerContact },
+                currentOrder.items
+            );
 
-            if (successful) {
-                // Update the status to 'Completed' here in a real system, but for simulation, the order is now finalized.
-                // updateOrderStatus(currentOrder.order_id, 'Completed'); // We just leave it as pending for demo to show up in pending list
-                showMessage('Order Finalized', `Order #${currentOrder.order_id} has been submitted successfully (Total: $${calculateTotalOrderPrice(currentOrder.order_id).toFixed(2)}). It is now in the Pending list.`);
+            if (!result.success) {
+                showMessage('Order Failed', `Could not submit order. Reason: **${result.message}**`, false);
+                // Important: Do NOT clear currentOrder on failure due to stock check
+                return;
             }
+
+            showMessage('Order Submitted', `Order finalized and submitted successfully! Stock has been automatically deducted.`);
 
             // Reset UI state
             currentOrder = null;
             renderOrderForm();
+            // Re-render all data-driven sections
             renderPendingOrders();
             renderMenu();
+            renderOrderHistory(); 
+            renderReports();
         };
         
-        // Order Handler: Cancel the temporary order
         const cancelCurrentOrder = () => {
             if (currentOrder) {
-                // Since this order was never inserted into DB_STATE.orders, we just reset the temporary state.
-                showMessage('Order Reset', `The current order creation process for #${currentOrder.order_id} has been abandoned.`);
+                showMessage('Order Discarded', `The current order creation for **${currentOrder.customerName}** has been discarded.`);
                 currentOrder = null;
                 renderOrderForm();
             }
         }
         
-        // Order Handler: Status Change
         const handleUpdateStatus = (orderId, newStatus) => {
-            updateOrderStatus(orderId, newStatus); // Procedure: Update Order Status (Triggers handle restock)
+            const result = updateOrderStatus(orderId, newStatus);
+
+            if (!result.success) {
+                showMessage('Update Failed', `Could not update order status. Reason: ${result.message}`, false);
+                return;
+            }
+            
+            showMessage('Status Updated', `Order **#${orderId}** status changed to **${newStatus}**. Stock adjusted if cancelled.`);
+            
+            // Re-render all data-driven sections
+            renderPendingOrders();
+            renderMenu(); 
+            renderOrderHistory(); // Update history immediately
+            renderReports();
         };
 
 
-        // --- 5. INITIALIZATION ---
+        // --- 7. INITIALIZATION ---
         window.onload = () => {
-            // Initial render of the default section
+            loadState(); // Load state from local storage
             renderMenu();
-            renderOrderForm();
+            renderOrderForm(); 
             renderPendingOrders();
+            renderOrderHistory(); // Initial render for history
             renderReports();
-            showSection('menu-section'); // Start on the menu page
+            showSection('menu-section');
         };
     </script>
 </body>
